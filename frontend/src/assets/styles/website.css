@@ -1,0 +1,21 @@
+/* website.css — only truly global website primitives needed beyond main.css */
+
+/* Page hero used across public pages */
+.page-hero {
+  padding: 4rem 0 3rem;
+  text-align: center;
+}
+.page-hero-title {
+  font-family: var(--font-heading);
+  font-size: clamp(1.8rem, 5vw, 3rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-bottom: 1rem;
+}
+.page-hero-sub {
+  color: var(--text-muted);
+  font-size: clamp(0.95rem, 2vw, 1.1rem);
+  max-width: 640px;
+  margin: 0 auto;
+  line-height: 1.7;
+}
