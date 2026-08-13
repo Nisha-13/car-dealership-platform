@@ -59,7 +59,6 @@ npm run dev
 
 ## 🔐 Demo Accounts
 
-**Admin:** `admin@autoluxe.com` / `Admin123!`
 **Customer:** `john@example.com` / `Customer123!`
 
 ## 📞 Real-Time Features
