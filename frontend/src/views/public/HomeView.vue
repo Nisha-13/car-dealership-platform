@@ -651,12 +651,17 @@ onBeforeUnmount(() => {
 .filter-select {
   width: 100%;
   padding: 0.75rem 1rem;
-  background: rgba(255, 255, 255, 0.05);
+  background: #111827;
   border: 1px solid var(--border-color);
   border-radius: 8px;
-  color: var(--text-main);
+  color: #ffffff;
   font-size: 0.95rem;
   cursor: pointer;
+}
+
+.filter-select option {
+  background: #111827;
+  color: #ffffff;
 }
 
 .search-btn {

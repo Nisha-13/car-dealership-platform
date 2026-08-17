@@ -78,6 +78,88 @@ function registerNotificationListeners() {
     }
   });
 
+  // Reservation Created -> Notify Admin
+  appEvents.on(eventTypes.RESERVATION_CREATED, async (data) => {
+    try {
+      const admins = await User.find({ role: 'admin' });
+      for (const admin of admins) {
+        const notif = await Notification.create({
+          recipient: admin._id,
+          title: '🚗 New Vehicle Reservation',
+          message: `Customer reserved ${data.carTitle} from ${new Date(data.startDate).toLocaleDateString()} to ${new Date(data.endDate).toLocaleDateString()} (Deposit: $${(data.depositAmount || 500).toLocaleString()}).`,
+          type: 'reservation',
+          link: '/admin/reservations'
+        });
+
+        const io = getIO();
+        if (io) {
+          io.to(`user:${admin._id}`).emit('notification_received', notif);
+          io.to('admin').emit('notification_received', notif);
+          io.to('admin').emit('reservation_created', data);
+        }
+      }
+    } catch (err) {
+      console.error('[Listener Notification Error]:', err.message);
+    }
+  });
+
+  // Reservation Status Changed -> Notify Customer
+  appEvents.on(eventTypes.RESERVATION_STATUS_CHANGED, async (data) => {
+    try {
+      const statusIcon = data.status === 'Confirmed' ? '✅' : data.status === 'Cancelled' ? '❌' : data.status === 'Completed' ? '🏆' : 'ℹ️';
+      const notif = await Notification.create({
+        recipient: data.userId,
+        title: `${statusIcon} Reservation ${data.status}`,
+        message: `Your reservation for ${data.carTitle} has been updated to: ${data.status}.`,
+        type: 'reservation',
+        link: '/dashboard/reservations'
+      });
+
+      const io = getIO();
+      if (io) {
+        io.to(`user:${data.userId}`).emit('notification_received', notif);
+        io.to(`user:${data.userId}`).emit('reservation_updated', {
+          reservationId: data.reservationId,
+          status: data.status
+        });
+        io.to('admin').emit('reservation_updated', {
+          reservationId: data.reservationId,
+          status: data.status
+        });
+      }
+    } catch (err) {
+      console.error('[Listener Notification Error]:', err.message);
+    }
+  });
+
+  // Reservation Cancelled -> Notify Admin
+  appEvents.on(eventTypes.RESERVATION_CANCELLED, async (data) => {
+    try {
+      const admins = await User.find({ role: 'admin' });
+      for (const admin of admins) {
+        const notif = await Notification.create({
+          recipient: admin._id,
+          title: '❌ Reservation Cancelled',
+          message: `Reservation for ${data.carTitle} was cancelled. Vehicle restored to showroom fleet.`,
+          type: 'reservation',
+          link: '/admin/reservations'
+        });
+
+        const io = getIO();
+        if (io) {
+          io.to(`user:${admin._id}`).emit('notification_received', notif);
+          io.to('admin').emit('notification_received', notif);
+          io.to('admin').emit('reservation_updated', {
+            reservationId: data.reservationId,
+            status: 'Cancelled'
+          });
+        }
+      }
+    } catch (err) {
+      console.error('[Listener Notification Error]:', err.message);
+    }
+  });
+
   console.log('[Listeners] Notification listeners registered');
 }
 

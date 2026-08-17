@@ -43,6 +43,15 @@ export function useSocket() {
       showToast(`🏎️ Booking #${data.testDriveId.substring(18)} updated to: ${data.status}`, 'success');
     });
 
+    socket.on('reservation_updated', (data) => {
+      showToast(`🚗 Reservation status updated to: ${data.status}`, 'success');
+    });
+
+    socket.on('car_status_changed', (data) => {
+      // Background inventory status update
+      console.log('⚡ Car status update broadcast received:', data);
+    });
+
     socket.on('disconnect', () => {
       console.log('⚡ [Socket.IO Client] Disconnected');
     });

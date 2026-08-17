@@ -39,6 +39,42 @@ function registerActivityLogListeners() {
     }
   });
 
+  appEvents.on(eventTypes.RESERVATION_CREATED, async (data) => {
+    try {
+      await ActivityLog.create({
+        user: data.userId,
+        action: 'Car Reserved',
+        details: `Reserved ${data.carTitle} for ${new Date(data.startDate).toLocaleDateString()} - ${new Date(data.endDate).toLocaleDateString()}`
+      });
+    } catch (err) {
+      console.error('[Listener ActivityLog Error]:', err.message);
+    }
+  });
+
+  appEvents.on(eventTypes.RESERVATION_STATUS_CHANGED, async (data) => {
+    try {
+      await ActivityLog.create({
+        user: data.updatedBy || null,
+        action: 'Reservation Status Changed',
+        details: `Reservation for ${data.carTitle} changed to ${data.status}`
+      });
+    } catch (err) {
+      console.error('[Listener ActivityLog Error]:', err.message);
+    }
+  });
+
+  appEvents.on(eventTypes.RESERVATION_CANCELLED, async (data) => {
+    try {
+      await ActivityLog.create({
+        user: data.updatedBy || null,
+        action: 'Reservation Cancelled',
+        details: `Reservation for ${data.carTitle} was cancelled. Car restored to Available.`
+      });
+    } catch (err) {
+      console.error('[Listener ActivityLog Error]:', err.message);
+    }
+  });
+
   console.log('[Listeners] ActivityLog listeners registered');
 }
 

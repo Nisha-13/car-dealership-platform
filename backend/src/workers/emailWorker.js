@@ -23,6 +23,9 @@ function startEmailWorker() {
           case 'sendInquiryReceivedEmail':
             console.log(`[Email Delivered] Inquiry receipt acknowledgment sent to: ${job.data.email}`);
             break;
+          case 'sendReservationConfirmation':
+            console.log(`[Email Delivered] Vehicle reservation confirmation sent to: ${job.data.email} for ${job.data.carTitle} (Deposit: $${job.data.depositAmount})`);
+            break;
           default:
             console.log(`[Email Delivered] Generic notification email sent to ${job.data.email}`);
         }

@@ -1,14 +1,20 @@
 const Car = require('../models/Car');
 const Category = require('../models/Category');
 const Favorite = require('../models/Favorite');
-const { getCachedData, setCachedData, clearCachePattern } = require('./redis.service');
+const {
+  getCachedData,
+  setCachedData,
+  clearCachePattern
+} = require('./redis.service');
 const appEvents = require('../events/appEvents');
 const eventTypes = require('../events/eventTypes');
+const { deleteUploadedFile } = require('../utils/file.utils');
 
 class CarService {
   static async getAllCars(query = {}) {
     const cacheKey = `cars_list_${JSON.stringify(query)}`;
     const cached = await getCachedData(cacheKey);
+
     if (cached) return cached;
 
     const {
@@ -33,22 +39,37 @@ class CarService {
     if (fuelType) filter.fuelType = fuelType;
     if (transmission) filter.transmission = transmission;
     if (status) filter.status = status;
-    if (featured !== undefined) filter.featured = featured === 'true';
+    if (featured !== undefined) {
+      filter.featured = featured === 'true';
+    }
 
-    if (year) filter.year = Number(year);
+    if (year) {
+      filter.year = Number(year);
+    }
 
     if (minPrice || maxPrice) {
       filter.price = {};
-      if (minPrice) filter.price.$gte = Number(minPrice);
-      if (maxPrice) filter.price.$lte = Number(maxPrice);
+
+      if (minPrice) {
+        filter.price.$gte = Number(minPrice);
+      }
+
+      if (maxPrice) {
+        filter.price.$lte = Number(maxPrice);
+      }
     }
 
     if (category) {
       if (category.match(/^[0-9a-fA-F]{24}$/)) {
         filter.category = category;
       } else {
-        const catObj = await Category.findOne({ slug: category });
-        if (catObj) filter.category = catObj._id;
+        const catObj = await Category.findOne({
+          slug: category
+        });
+
+        if (catObj) {
+          filter.category = catObj._id;
+        }
       }
     }
 
@@ -62,6 +83,7 @@ class CarService {
     }
 
     const skip = (Number(page) - 1) * Number(limit);
+
     const total = await Car.countDocuments(filter);
 
     const cars = await Car.find(filter)
@@ -80,15 +102,21 @@ class CarService {
     };
 
     await setCachedData(cacheKey, result, 300);
+
     return result;
   }
 
   static async getCarById(id) {
     const cacheKey = `car_detail_${id}`;
     const cached = await getCachedData(cacheKey);
+
     if (cached) return cached;
 
-    const car = await Car.findById(id).populate('category', 'name slug description');
+    const car = await Car.findById(id).populate(
+      'category',
+      'name slug description'
+    );
+
     if (!car) {
       const error = new Error('Vehicle not found.');
       error.statusCode = 404;
@@ -96,31 +124,47 @@ class CarService {
     }
 
     await setCachedData(cacheKey, car, 600);
+
     return car;
   }
 
   static async createCar(carData, files = []) {
-    const imageUrls = files.map(file => `/uploads/cars/${file.filename}`);
+    const imageUrls = files.map(
+      file => `/uploads/cars/${file.filename}`
+    );
+
     if (carData.images && Array.isArray(carData.images)) {
       imageUrls.push(...carData.images);
     }
 
     if (imageUrls.length === 0) {
-      // Default fallback luxury image if none provided
-      imageUrls.push('https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=1200&q=80');
+      imageUrls.push(
+        'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=1200&q=80'
+      );
     }
 
     let parsedSpecs = {};
+
     if (typeof carData.specifications === 'string') {
-      try { parsedSpecs = JSON.parse(carData.specifications); } catch(e){}
+      try {
+        parsedSpecs = JSON.parse(carData.specifications);
+      } catch (e) {
+        parsedSpecs = {};
+      }
     } else if (carData.specifications) {
       parsedSpecs = carData.specifications;
     }
 
     let parsedFeatures = [];
+
     if (typeof carData.features === 'string') {
-      try { parsedFeatures = JSON.parse(carData.features); } catch(e){
-        parsedFeatures = carData.features.split(',').map(f => f.trim());
+      try {
+        parsedFeatures = JSON.parse(carData.features);
+      } catch (e) {
+        parsedFeatures = carData.features
+          .split(',')
+          .map(f => f.trim())
+          .filter(Boolean);
       }
     } else if (Array.isArray(carData.features)) {
       parsedFeatures = carData.features;
@@ -142,53 +186,168 @@ class CarService {
       features: parsedFeatures,
       status: carData.status || 'Available',
       images: imageUrls,
-      featured: carData.featured === 'true' || carData.featured === true,
+      featured:
+        carData.featured === 'true' ||
+        carData.featured === true,
       specifications: parsedSpecs
     });
 
     await clearCachePattern('cars_*');
     await clearCachePattern(`car_detail_${car._id}`);
+
     return car;
   }
 
   static async updateCar(id, carData, files = []) {
     const car = await Car.findById(id);
+
     if (!car) {
       const error = new Error('Vehicle not found.');
       error.statusCode = 404;
       throw error;
     }
 
+    /*
+     * Remove selected existing images
+     *
+     * Frontend sends:
+     * removedImages = JSON.stringify([
+     *   "/uploads/cars/car-123.jpg"
+     * ])
+     */
+    let removedImages = [];
+
+    if (carData.removedImages) {
+      try {
+        removedImages =
+          typeof carData.removedImages === 'string'
+            ? JSON.parse(carData.removedImages)
+            : carData.removedImages;
+      } catch (error) {
+        removedImages = [];
+      }
+    }
+
+    if (!Array.isArray(removedImages)) {
+      removedImages = [];
+    }
+
+    /*
+     * Only remove images that actually exist
+     * in the current car document.
+     */
+    const imagesToDelete = car.images.filter(image =>
+      removedImages.includes(image)
+    );
+
+    /*
+     * Remove selected images from MongoDB.
+     */
+    if (imagesToDelete.length > 0) {
+      car.images = car.images.filter(
+        image => !imagesToDelete.includes(image)
+      );
+    }
+
+    /*
+     * Delete the corresponding local files.
+     * External URLs are safely ignored by deleteUploadedFile().
+     */
+    imagesToDelete.forEach(image => {
+      deleteUploadedFile(image);
+    });
+
+    /*
+     * Add newly uploaded images.
+     */
     if (files.length > 0) {
-      const newImages = files.map(file => `/uploads/cars/${file.filename}`);
+      const newImages = files.map(
+        file => `/uploads/cars/${file.filename}`
+      );
+
       car.images = [...car.images, ...newImages];
     }
 
-    if (carData.title) car.title = carData.title;
-    if (carData.brand) car.brand = carData.brand;
-    if (carData.model) car.model = carData.model;
-    if (carData.year) car.year = Number(carData.year);
-    if (carData.price) car.price = Number(carData.price);
-    if (carData.category) car.category = carData.category;
-    if (carData.mileage) car.mileage = Number(carData.mileage);
-    if (carData.fuelType) car.fuelType = carData.fuelType;
-    if (carData.transmission) car.transmission = carData.transmission;
-    if (carData.engine) car.engine = carData.engine;
-    if (carData.color) car.color = carData.color;
-    if (carData.description) car.description = carData.description;
+    if (carData.title) {
+      car.title = carData.title;
+    }
+
+    if (carData.brand) {
+      car.brand = carData.brand;
+    }
+
+    if (carData.model) {
+      car.model = carData.model;
+    }
+
+    if (carData.year) {
+      car.year = Number(carData.year);
+    }
+
+    if (carData.price) {
+      car.price = Number(carData.price);
+    }
+
+    if (carData.category) {
+      car.category = carData.category;
+    }
+
+    if (carData.mileage) {
+      car.mileage = Number(carData.mileage);
+    }
+
+    if (carData.fuelType) {
+      car.fuelType = carData.fuelType;
+    }
+
+    if (carData.transmission) {
+      car.transmission = carData.transmission;
+    }
+
+    if (carData.engine) {
+      car.engine = carData.engine;
+    }
+
+    if (carData.color) {
+      car.color = carData.color;
+    }
+
+    if (carData.description) {
+      car.description = carData.description;
+    }
+
     if (carData.status) {
       const prevStatus = car.status;
+
       car.status = carData.status;
+
       if (prevStatus !== carData.status) {
-        appEvents.emit(eventTypes.CAR_STATUS_CHANGED, { carId: car._id, title: car.title, newStatus: carData.status });
+        appEvents.emit(
+          eventTypes.CAR_STATUS_CHANGED,
+          {
+            carId: car._id,
+            title: car.title,
+            newStatus: carData.status
+          }
+        );
       }
     }
-    if (carData.featured !== undefined) car.featured = carData.featured === 'true' || carData.featured === true;
+
+    if (carData.featured !== undefined) {
+      car.featured =
+        carData.featured === 'true' ||
+        carData.featured === true;
+    }
 
     if (carData.features) {
       if (typeof carData.features === 'string') {
-        try { car.features = JSON.parse(carData.features); } catch(e){
-          car.features = carData.features.split(',').map(f => f.trim());
+        try {
+          car.features = JSON.parse(carData.features);
+        } catch (e) {
+          car.features = carData.features
+            .split(',')
+            .map(f => f.trim())
+            .filter(Boolean);
         }
       } else if (Array.isArray(carData.features)) {
         car.features = carData.features;
@@ -197,48 +356,97 @@ class CarService {
 
     if (carData.specifications) {
       if (typeof carData.specifications === 'string') {
-        try { car.specifications = JSON.parse(carData.specifications); } catch(e){}
+        try {
+          car.specifications = JSON.parse(
+            carData.specifications
+          );
+        } catch (e) {
+          // Keep existing specifications if parsing fails.
+        }
       } else {
-        car.specifications = { ...car.specifications, ...carData.specifications };
+        car.specifications = {
+          ...car.specifications,
+          ...carData.specifications
+        };
       }
     }
 
     await car.save();
+
+    /*
+     * Clear both list and detail caches after update.
+     */
     await clearCachePattern('cars_*');
     await clearCachePattern(`car_detail_${id}`);
+
     return car;
   }
 
   static async deleteCar(id) {
     const car = await Car.findById(id);
+
     if (!car) {
       const error = new Error('Vehicle not found.');
       error.statusCode = 404;
       throw error;
     }
+
+    /*
+     * Delete locally uploaded images when the
+     * complete vehicle is deleted.
+     */
+    if (Array.isArray(car.images)) {
+      car.images.forEach(image => {
+        deleteUploadedFile(image);
+      });
+    }
+
     await car.deleteOne();
+
     await clearCachePattern('cars_*');
     await clearCachePattern(`car_detail_${id}`);
+
     return true;
   }
 
   static async toggleFavorite(userId, carId) {
-    const existing = await Favorite.findOne({ user: userId, car: carId });
+    const existing = await Favorite.findOne({
+      user: userId,
+      car: carId
+    });
+
     if (existing) {
       await existing.deleteOne();
-      return { isFavorite: false };
-    } else {
-      await Favorite.create({ user: userId, car: carId });
-      return { isFavorite: true };
+
+      return {
+        isFavorite: false
+      };
     }
+
+    await Favorite.create({
+      user: userId,
+      car: carId
+    });
+
+    return {
+      isFavorite: true
+    };
   }
 
   static async getUserFavorites(userId) {
-    const favorites = await Favorite.find({ user: userId }).populate({
+    const favorites = await Favorite.find({
+      user: userId
+    }).populate({
       path: 'car',
-      populate: { path: 'category', select: 'name slug' }
+      populate: {
+        path: 'category',
+        select: 'name slug'
+      }
     });
-    return favorites.map(f => f.car).filter(Boolean);
+
+    return favorites
+      .map(f => f.car)
+      .filter(Boolean);
   }
 }
 

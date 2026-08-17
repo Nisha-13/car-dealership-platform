@@ -37,6 +37,18 @@ function registerQueueProducerListeners() {
     });
   });
 
+  appEvents.on(eventTypes.RESERVATION_CREATED, (data) => {
+    addEmailJob('sendReservationConfirmation', {
+      userId: data.userId,
+      email: data.email,
+      name: data.name,
+      carTitle: data.carTitle,
+      startDate: data.startDate,
+      endDate: data.endDate,
+      depositAmount: data.depositAmount
+    });
+  });
+
   console.log('[Listeners] QueueProducer listeners registered');
 }
 

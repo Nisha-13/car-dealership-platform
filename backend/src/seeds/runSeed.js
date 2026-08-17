@@ -9,6 +9,7 @@ const Inquiry = require('../models/Inquiry');
 const Message = require('../models/Message');
 const Notification = require('../models/Notification');
 const ActivityLog = require('../models/ActivityLog');
+const Reservation = require('../models/Reservation');
 
 const { categoriesData, carsData } = require('./seedData');
 
@@ -28,7 +29,8 @@ async function seedDatabase() {
       Inquiry.deleteMany({}),
       Message.deleteMany({}),
       Notification.deleteMany({}),
-      ActivityLog.deleteMany({})
+      ActivityLog.deleteMany({}),
+      Reservation.deleteMany({})
     ]);
 
     console.log('[Seed] Creating demo users...');
@@ -92,6 +94,48 @@ async function seedDatabase() {
       preferredTime: '02:00 PM',
       status: 'Pending',
       notes: 'Would like a trade-in evaluation for my 2020 M3.'
+    });
+
+    console.log('[Seed] Creating initial vehicle reservations...');
+    // Reservation 1: Mercedes-AMG GT (Customer 1 - Confirmed)
+    await Car.findByIdAndUpdate(createdCars[2]._id, { status: 'Reserved' });
+    await Reservation.create({
+      user: customer1._id,
+      car: createdCars[2]._id,
+      startDate: new Date(Date.now() + 86400000 * 2),
+      endDate: new Date(Date.now() + 86400000 * 6),
+      totalDays: 5,
+      depositAmount: 500,
+      totalPrice: createdCars[2].price,
+      status: 'Confirmed',
+      paymentStatus: 'Deposit Paid',
+      paymentMethod: 'Card',
+      contactPhone: customer1.phone,
+      driverLicense: 'DL-98234-NY',
+      pickupLocation: 'AutoLuxe VIP Flagship Showroom',
+      customerNotes: 'Please have the vehicle fully detailed and preconditioned before pickup.',
+      adminNotes: 'VIP client reservation confirmed. Assigned luxury concierge Marcus.',
+      confirmedAt: new Date()
+    });
+
+    // Reservation 2: Ferrari F8 Tributo (Customer 2 - Pending)
+    await Car.findByIdAndUpdate(createdCars[6]._id, { status: 'Reserved' });
+    await Reservation.create({
+      user: customer2._id,
+      car: createdCars[6]._id,
+      startDate: new Date(Date.now() + 86400000 * 3),
+      endDate: new Date(Date.now() + 86400000 * 7),
+      totalDays: 5,
+      depositAmount: 500,
+      totalPrice: createdCars[6].price,
+      status: 'Pending',
+      paymentStatus: 'Deposit Paid',
+      paymentMethod: 'Bank Transfer',
+      contactPhone: customer2.phone,
+      driverLicense: 'DL-55412-CA',
+      pickupLocation: 'AutoLuxe VIP Flagship Showroom',
+      customerNotes: 'Requesting enclosed trailer delivery option if available.',
+      adminNotes: 'Awaiting ID verification before confirming slot.'
     });
 
     console.log('[Seed] Creating sample inquiries & chat messages...');

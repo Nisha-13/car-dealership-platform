@@ -19,6 +19,7 @@ import RegisterView from '@/views/public/RegisterView.vue';
 
 // Customer Dashboard Views
 import CustomerDashboardView from '@/views/customer/CustomerDashboardView.vue';
+import CustomerReservationsView from '@/views/customer/CustomerReservationsView.vue';
 import CustomerTestDrivesView from '@/views/customer/CustomerTestDrivesView.vue';
 import CustomerFavoritesView from '@/views/customer/CustomerFavoritesView.vue';
 import CustomerInquiriesView from '@/views/customer/CustomerInquiriesView.vue';
@@ -31,6 +32,7 @@ import AdminDashboardView from '@/views/admin/AdminDashboardView.vue';
 import AdminCarsView from '@/views/admin/AdminCarsView.vue';
 import AdminCarFormView from '@/views/admin/AdminCarFormView.vue';
 import AdminCategoriesView from '@/views/admin/AdminCategoriesView.vue';
+import AdminReservationsView from '@/views/admin/AdminReservationsView.vue';
 import AdminTestDrivesView from '@/views/admin/AdminTestDrivesView.vue';
 import AdminInquiriesView from '@/views/admin/AdminInquiriesView.vue';
 import AdminMessagesView from '@/views/admin/AdminMessagesView.vue';
@@ -63,6 +65,7 @@ const routes = [
     meta: { requiresAuth: true, role: 'customer' },
     children: [
       { path: '', name: 'customer-dashboard', component: CustomerDashboardView },
+      { path: 'reservations', name: 'customer-reservations', component: CustomerReservationsView },
       { path: 'test-drives', name: 'customer-test-drives', component: CustomerTestDrivesView },
       { path: 'favorites', name: 'customer-favorites', component: CustomerFavoritesView },
       { path: 'inquiries', name: 'customer-inquiries', component: CustomerInquiriesView },
@@ -83,6 +86,7 @@ const routes = [
       { path: 'cars', name: 'admin-cars', component: AdminCarsView },
       { path: 'cars/create', name: 'admin-car-create', component: AdminCarFormView },
       { path: 'cars/:id/edit', name: 'admin-car-edit', component: AdminCarFormView },
+      { path: 'reservations', name: 'admin-reservations', component: AdminReservationsView },
       { path: 'categories', name: 'admin-categories', component: AdminCategoriesView },
       { path: 'test-drives', name: 'admin-test-drives', component: AdminTestDrivesView },
       { path: 'inquiries', name: 'admin-inquiries', component: AdminInquiriesView },

@@ -27,6 +27,7 @@ const chatRoutes = require('./routes/chat.routes');
 const notificationRoutes = require('./routes/notification.routes');
 const statsRoutes = require('./routes/stats.routes');
 const userRoutes = require('./routes/user.routes');
+const reservationRoutes = require('./routes/reservation.routes');
 
 const app = express();
 const server = http.createServer(app);
@@ -43,12 +44,13 @@ registerQueueProducerListeners();
 startEmailWorker();
 startReminderWorker();
 
-// Express Middlewares
+// ── CORS ─────────────────────────────────────────────────────────────────────
 app.use(cors({
   origin: [config.clientUrl, 'http://localhost:5173', 'http://127.0.0.1:5173'],
   credentials: true
 }));
 
+// ── JSON Body Parsing ────────────────────────────────────────────────────────
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
@@ -58,7 +60,7 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 // Apply General Rate Limiter to API
 app.use('/api', apiLimiter);
 
-// API Routes
+// ── API Routes ────────────────────────────────────────────────────────────────
 app.use('/api/auth', authRoutes);
 app.use('/api/cars', carRoutes);
 app.use('/api/categories', categoryRoutes);
@@ -68,6 +70,7 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/reservations', reservationRoutes);
 
 // Root Health Check Route
 app.get('/', (req, res) => {
@@ -89,6 +92,7 @@ const PORT = config.port;
 server.listen(PORT, () => {
   console.log(`\n🚀 [AutoLuxe Backend] Running on http://localhost:${PORT}`);
   console.log(`⚡ Real-Time Socket.IO listening on port ${PORT}`);
+  console.log(`💳 Stripe Webhook endpoint: POST http://localhost:${PORT}/api/reservations/webhook`);
   console.log(`📁 Static files served at http://localhost:${PORT}/uploads/\n`);
 });
 

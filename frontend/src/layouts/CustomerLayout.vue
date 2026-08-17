@@ -16,6 +16,9 @@
         <router-link to="/dashboard" class="sidebar-link" @click="mobileOpen = false">
           📊 Overview
         </router-link>
+        <router-link to="/dashboard/reservations" class="sidebar-link" @click="mobileOpen = false">
+          🚗 My Reservations
+        </router-link>
         <router-link to="/dashboard/test-drives" class="sidebar-link" @click="mobileOpen = false">
           🏎️ My Test Drives
         </router-link>
@@ -93,6 +96,7 @@ const mobileOpen = ref(false);
 
 const pageTitle = computed(() => {
   if (route.name === 'customer-dashboard') return 'Customer Dashboard';
+  if (route.name === 'customer-reservations') return 'My Vehicle Reservations';
   if (route.name === 'customer-test-drives') return 'My Test Drives';
   if (route.name === 'customer-favorites') return 'Saved Favorites';
   if (route.name === 'customer-inquiries') return 'My Vehicle Inquiries';

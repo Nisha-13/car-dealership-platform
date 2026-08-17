@@ -19,6 +19,9 @@
         <router-link to="/admin/cars" class="sidebar-link" @click="mobileOpen = false">
           🏎️ Inventory (Cars)
         </router-link>
+        <router-link to="/admin/reservations" class="sidebar-link" @click="mobileOpen = false">
+          🚗 Car Reservations
+        </router-link>
         <router-link to="/admin/categories" class="sidebar-link" @click="mobileOpen = false">
           🏷️ Categories
         </router-link>
@@ -109,6 +112,7 @@ const pageTitle = computed(() => {
   if (route.name === 'admin-cars') return 'Vehicle Inventory Management';
   if (route.name === 'admin-car-create') return 'Add New Luxury Vehicle';
   if (route.name === 'admin-car-edit') return 'Edit Vehicle Details';
+  if (route.name === 'admin-reservations') return 'Car Reservation Supervisor';
   if (route.name === 'admin-categories') return 'Category Management';
   if (route.name === 'admin-test-drives') return 'Test Drive Supervisor';
   if (route.name === 'admin-inquiries') return 'Customer Inquiries';
