@@ -82,9 +82,11 @@
               <div class="filter-group">
                 <select v-model="maxPrice" class="filter-select">
                   <option value="">Max Price</option>
-                  <option value="100000">Under $100K</option>
-                  <option value="150000">Under $150K</option>
-                  <option value="250000">Under $250K</option>
+                  <option
+                    v-for="opt in priceOptions"
+                    :key="opt"
+                    :value="opt"
+                  >{{ formatPriceLabel(opt) }}</option>
                 </select>
               </div>
               
@@ -238,6 +240,34 @@ const fuelType = ref('');
 const maxPrice = ref('');
 const currentSlide = ref(0);
 const sliderInterval = ref(null);
+
+// Generates 4-5 smart price bracket options from real DB min/max
+const priceOptions = computed(() => {
+  const { maxPrice: dbMax } = carStore.priceRange;
+  if (!dbMax || dbMax <= 0) return [];
+
+  // Round up to nearest nice number then split into ~4 buckets
+  const ceilTo = (val, step) => Math.ceil(val / step) * step;
+  const step = dbMax <= 100000 ? 25000
+    : dbMax <= 300000 ? 50000
+    : dbMax <= 600000 ? 100000
+    : 200000;
+
+  const top = ceilTo(dbMax, step);
+  const opts = [];
+  for (let v = step; v <= top; v += step) {
+    opts.push(v);
+  }
+  // Always include the real max if not already present
+  if (opts[opts.length - 1] < dbMax) opts.push(ceilTo(dbMax, step));
+  return opts;
+});
+
+const formatPriceLabel = (val) => {
+  if (val >= 1000000) return `Under $${(val / 1000000).toFixed(1)}M`;
+  if (val >= 1000)    return `Under $${(val / 1000).toFixed(0)}K`;
+  return `Under $${val}`;
+};
 
 const featuredCars = computed(() => {
   return carStore.cars.filter(c => c.featured || c.status === 'Available').slice(0, 6);
@@ -412,6 +442,8 @@ const handleViewCar = (car) => {
 onMounted(async () => {
   await carStore.fetchCars({ limit: 12 }); // Fetch more cars for slider
   await carStore.fetchCategories();
+  await carStore.fetchPriceRange(); // Load real DB price range
+
   
   // Debug: Check what cars we have
   console.log('Slider cars:', sliderCars.value);

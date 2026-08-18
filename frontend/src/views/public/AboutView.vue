@@ -23,9 +23,9 @@
     <!-- Stats Banner -->
     <section class="about-stats-banner">
       <div class="container">
-        <div class="about-stats-grid">
-          <div class="about-stat" v-for="s in stats" :key="s.num">
-            <div class="about-stat-num">{{ s.num }}</div>
+        <div class="about-stats-grid" ref="statsBannerRef">
+          <div class="about-stat" v-for="(s, i) in stats" :key="s.num">
+            <div class="about-stat-num">{{ s.display }}</div>
             <div class="about-stat-lbl">{{ s.lbl }}</div>
           </div>
         </div>
@@ -68,6 +68,8 @@
 </template>
 
 <script setup>
+import { ref, reactive, onMounted, onUnmounted } from 'vue';
+
 const valueCards = [
   { icon: '🏆', title: 'Certified Quality', desc: 'Every vehicle undergoes a 150-point technical inspection by certified master technicians before entering our VIP showroom.' },
   { icon: '⚡', title: 'Real-Time Platform', desc: 'Our Socket.IO platform enables direct live chat with dealership directors and instant test drive confirmations in real-time.' },
@@ -75,12 +77,76 @@ const valueCards = [
   { icon: '💎', title: 'Exclusive Inventory', desc: 'Access to ultra-limited editions, factory-ordered configurations, and pre-owned certified hyper-vehicles worldwide.' },
 ];
 
-const stats = [
-  { num: '500+', lbl: 'Vehicles Delivered' },
-  { num: '50+', lbl: 'Exclusive Brands' },
-  { num: '99%', lbl: 'Customer Satisfaction' },
-  { num: '24/7', lbl: 'Live Dealer Support' },
-];
+// Reactive stats — filled from API
+const stats = reactive([
+  { target: null, suffix: '+', lbl: 'Vehicles Delivered',   display: '...' },
+  { target: null, suffix: '+', lbl: 'Exclusive Brands',     display: '...' },
+  { target: null, suffix: '%', lbl: 'Customer Satisfaction', display: '...' },
+  { target: null, suffix: '',  lbl: 'Live Dealer Support',  display: '24/7' },
+]);
+
+const statsBannerRef = ref(null);
+const statsLoaded = ref(false);
+let observer = null;
+
+function animateCounter(stat, duration = 1800) {
+  if (stat.target === null) return; // static value — skip
+  const start = performance.now();
+  const to = stat.target;
+  function step(now) {
+    const elapsed = now - start;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    const current = Math.round(to * eased);
+    stat.display = current + stat.suffix;
+    if (progress < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+function startAnimationsIfReady() {
+  if (statsLoaded.value) {
+    stats.forEach(s => animateCounter(s));
+    if (observer) observer.disconnect();
+  }
+}
+
+async function fetchPublicStats() {
+  try {
+    const base = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    const res  = await fetch(`${base}/api/stats/public`);
+    const json = await res.json();
+    if (json.success && json.data) {
+      const d = json.data;
+      stats[0].target = d.vehiclesDelivered ?? 0;
+      stats[1].target = d.exclusiveBrands   ?? 0;
+      stats[2].target = d.satisfactionPct   ?? 98;
+      // stats[3] stays 24/7
+    }
+  } catch {
+    // Fallback if API is down
+    stats[0].target = 0;
+    stats[1].target = 0;
+    stats[2].target = 98;
+  } finally {
+    statsLoaded.value = true;
+    startAnimationsIfReady();
+  }
+}
+
+onMounted(() => {
+  fetchPublicStats();
+
+  observer = new IntersectionObserver(
+    (entries) => {
+      if (entries[0].isIntersecting) startAnimationsIfReady();
+    },
+    { threshold: 0.3 }
+  );
+  if (statsBannerRef.value) observer.observe(statsBannerRef.value);
+});
+
+onUnmounted(() => { if (observer) observer.disconnect(); });
 
 const features = [
   'Live Socket.IO customer-dealer chat',

@@ -64,6 +64,14 @@ class CarController {
       next(err);
     }
   }
+  static async getPriceRange(req, res, next) {
+    try {
+      const range = await CarService.getPriceRange();
+      return ApiResponse.success(res, range, 'Price range retrieved');
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 module.exports = CarController;

@@ -8,6 +8,7 @@ const validate = require('../middleware/validate.middleware');
 const router = express.Router();
 
 router.get('/', CarController.getAllCars);
+router.get('/price-range', CarController.getPriceRange);   // must be before /:id
 router.get('/favorites', protect, CarController.getUserFavorites);
 router.get('/:id', CarController.getCarById);
 

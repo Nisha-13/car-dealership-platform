@@ -106,6 +106,31 @@ class CarService {
     return result;
   }
 
+  // Returns real min & max price from DB — used for dynamic price filter on Home page
+  static async getPriceRange() {
+    const cacheKey = 'cars_price_range';
+    const cached = await getCachedData(cacheKey);
+    if (cached) return cached;
+
+    const agg = await Car.aggregate([
+      { $match: { price: { $gt: 0 } } },
+      {
+        $group: {
+          _id: null,
+          minPrice: { $min: '$price' },
+          maxPrice: { $max: '$price' }
+        }
+      }
+    ]);
+
+    const range = agg.length
+      ? { minPrice: agg[0].minPrice, maxPrice: agg[0].maxPrice }
+      : { minPrice: 0, maxPrice: 500000 }; // safe fallback
+
+    await setCachedData(cacheKey, range, 300); // cache 5 min
+    return range;
+  }
+
   static async getCarById(id) {
     const cacheKey = `car_detail_${id}`;
     const cached = await getCachedData(cacheKey);

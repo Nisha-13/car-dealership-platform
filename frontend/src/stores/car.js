@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { getCarsApi, getCarByIdApi, getCategoriesApi, toggleFavoriteApi, getFavoritesApi } from '@/api/car.api';
+import api from '@/api/axios';
 
 export const useCarStore = defineStore('car', {
   state: () => ({
@@ -8,6 +9,7 @@ export const useCarStore = defineStore('car', {
     favorites: [],
     currentCar: null,
     pagination: { total: 0, page: 1, pages: 1 },
+    priceRange: { minPrice: 0, maxPrice: 500000 }, // updated from DB
     filters: {
       search: '',
       brand: '',
@@ -33,6 +35,17 @@ export const useCarStore = defineStore('car', {
         console.error('Fetch cars error:', err);
       } finally {
         this.loading = false;
+      }
+    },
+
+    async fetchPriceRange() {
+      try {
+        const res = await api.get('/cars/price-range');
+        if (res.data?.data) {
+          this.priceRange = res.data.data;
+        }
+      } catch (err) {
+        console.error('Fetch price range error:', err);
       }
     },
 

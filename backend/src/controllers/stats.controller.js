@@ -19,6 +19,14 @@ class StatsController {
       next(err);
     }
   }
+  static async getPublicStats(req, res, next) {
+    try {
+      const stats = await StatsService.getPublicStats();
+      return ApiResponse.success(res, stats, 'Public stats retrieved');
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 module.exports = StatsController;
