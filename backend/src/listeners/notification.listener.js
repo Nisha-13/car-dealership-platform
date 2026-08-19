@@ -86,7 +86,7 @@ function registerNotificationListeners() {
         const notif = await Notification.create({
           recipient: admin._id,
           title: '🚗 New Vehicle Reservation',
-          message: `Customer reserved ${data.carTitle} from ${new Date(data.startDate).toLocaleDateString()} to ${new Date(data.endDate).toLocaleDateString()} (Deposit: $${(data.depositAmount || 500).toLocaleString()}).`,
+          message: `Customer reserved ${data.carTitle} from ${new Date(data.startDate).toLocaleDateString()} to ${new Date(data.endDate).toLocaleDateString()}.`,
           type: 'reservation',
           link: '/admin/reservations'
         });

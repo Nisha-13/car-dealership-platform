@@ -92,7 +92,6 @@ const PORT = config.port;
 server.listen(PORT, () => {
   console.log(`\n🚀 [AutoLuxe Backend] Running on http://localhost:${PORT}`);
   console.log(`⚡ Real-Time Socket.IO listening on port ${PORT}`);
-  console.log(`💳 Stripe Webhook endpoint: POST http://localhost:${PORT}/api/reservations/webhook`);
   console.log(`📁 Static files served at http://localhost:${PORT}/uploads/\n`);
 });
 

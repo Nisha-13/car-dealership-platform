@@ -33,8 +33,20 @@ class TestDriveService {
     }
 
     const preferredDate = new Date(bookingData.preferredDate);
-    if (isNaN(preferredDate.getTime()) || preferredDate < new Date()) {
-      const error = new Error('Preferred date must be a valid future date.');
+    if (isNaN(preferredDate.getTime())) {
+      const error = new Error('Preferred date is invalid.');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const bookingDay = new Date(preferredDate);
+    bookingDay.setHours(23, 59, 59, 999);
+
+    if (bookingDay < startOfToday) {
+      const error = new Error('Preferred date must be today or a future date.');
       error.statusCode = 400;
       throw error;
     }

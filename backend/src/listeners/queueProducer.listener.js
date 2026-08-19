@@ -44,8 +44,7 @@ function registerQueueProducerListeners() {
       name: data.name,
       carTitle: data.carTitle,
       startDate: data.startDate,
-      endDate: data.endDate,
-      depositAmount: data.depositAmount
+      endDate: data.endDate
     });
   });
 

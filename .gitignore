@@ -16,6 +16,7 @@ backend/uploads/cars/*.jpg
 backend/uploads/cars/*.jpeg
 backend/uploads/cars/*.png
 backend/uploads/cars/*.webp
+backend/uploads/cars/*.avif
 
 # Logs
 *.log
