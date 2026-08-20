@@ -1,5 +1,6 @@
 const { Worker } = require('bullmq');
 const { getRedisClient, isRedisAvailable } = require('../config/redis');
+const emailService = require('../services/email.service');
 
 let emailWorker = null;
 
@@ -29,32 +30,33 @@ function startEmailWorker() {
 
           switch (job.name) {
             case 'sendWelcomeEmail':
-              console.log(
-                `[Email Delivered] Welcome email sent to: ${job.data.email}`
-              );
+              await emailService.sendWelcomeEmail(job.data);
+              break;
+
+            case 'sendAdminNewCustomerAlert':
+              await emailService.sendAdminNewCustomerAlert(job.data);
+              break;
+
+            case 'sendLoginNotificationEmail':
+              await emailService.sendLoginNotificationEmail(job.data);
               break;
 
             case 'sendTestDriveConfirmation':
-              console.log(
-                `[Email Delivered] Test drive confirmation email sent to: ${job.data.email} for ${job.data.carTitle}`
-              );
+              await emailService.sendTestDriveConfirmation(job.data);
               break;
 
             case 'sendInquiryReceivedEmail':
-              console.log(
-                `[Email Delivered] Inquiry receipt acknowledgment sent to: ${job.data.email}`
-              );
+              await emailService.sendInquiryReceivedEmail(job.data);
               break;
 
             case 'sendReservationConfirmation':
-              console.log(
-                `[Email Delivered] Vehicle reservation confirmation sent to: ${job.data.email} for ${job.data.carTitle}`
-              );
+              await emailService.sendReservationConfirmation(job.data);
               break;
 
             default:
               console.log(
-                `[Email Delivered] Generic notification email sent to ${job.data.email}`
+                `[BullMQ Worker - Email] Unhandled job '${job.name}' with data:`,
+                job.data
               );
           }
         },

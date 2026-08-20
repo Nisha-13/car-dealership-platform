@@ -47,7 +47,9 @@ class AuthService {
       userId: user._id,
       email: user.email,
       name: user.name,
-      role: user.role
+      role: user.role,
+      phone: user.phone,
+      createdAt: user.createdAt || new Date()
     });
 
     return {
@@ -90,6 +92,14 @@ class AuthService {
       // Don't fail login if linking fails, just log it
       console.error('Error linking guest inquiries:', err.message);
     }
+
+    appEvents.emit(eventTypes.USER_LOGGED_IN, {
+      userId: user._id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      loginTime: new Date()
+    });
 
     return {
       user: {

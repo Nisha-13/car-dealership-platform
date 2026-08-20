@@ -1,5 +1,6 @@
 const { Queue } = require('bullmq');
 const { getRedisClient, isRedisAvailable } = require('../config/redis');
+const emailService = require('../services/email.service');
 
 let emailQueue = null;
 
@@ -38,8 +39,12 @@ const addEmailJob = async (jobName, data) => {
     }
   }
   
-  // Fallback simulation when Redis is not active/available
-  console.log(`[BullMQ Simulation] Direct processing for job '${jobName}':`, data);
+  // Fallback processing when Redis is not active/available
+  console.log(`[Email Queue Fallback] Dispatching direct email for job '${jobName}'`);
+  emailService.processDirectEmail(jobName, data).catch((err) => {
+    console.error(`[Email Queue Fallback Error for '${jobName}']`, err.message);
+  });
 };
 
 module.exports = { addEmailJob, emailQueue };
+
