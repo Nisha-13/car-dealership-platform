@@ -251,7 +251,7 @@ class EmailService {
       <p style="color:#cbd5e1;font-size:14px;margin:0 0 4px 0;line-height:1.6;">
         Browse the latest high-performance arrivals or schedule a private test drive at your convenience:
       </p>
-      ${this.ctaButton(clientUrl + '/inventory', 'Explore Showroom')}
+      ${this.ctaButton(clientUrl + '/', 'Explore Showroom')}
     `;
 
     const html = this.wrapTemplate({
@@ -302,7 +302,7 @@ class EmailService {
       </p>
       ${this.infoCard(rows, '#3b82f6')}
       ${this.ctaButton(
-        clientUrl + '/admin/users',
+        clientUrl + '/admin/customers',
         'View Customer in Admin Portal',
         'linear-gradient(135deg,#3b82f6 0%,#1d4ed8 100%)',
         '#ffffff'
